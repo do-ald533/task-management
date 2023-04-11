@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: goapi
+  name: goapi-deployment
+  namespace: <%- namespace %>
+spec:
+  <% if (environment === "development") { %>
+  replicas: <%- replicas %>
+  <% } %>
+  selector:
+    matchLabels:
+      app: goapi
+  template:
+    metadata:
+      labels:
+        app: goapi
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: goapi
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: goapi
+        image: <%- containerRegistry %>/<%- containerRepository %>:<%- containerTag %>
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: goapi-env
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: 200m
+            memory: 400Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: goapi-service
+  namespace: <%- namespace %>
+spec:
+  selector:
+    app: goapi
+  type: NodePort
+  ports:
+  - port: <%- servicePort %>
+    protocol: TCP
+    targetPort: 5000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: goapi
+  name: goapi
+  namespace: <%- namespace %>
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: <%- ingressHost %>
+    http:
+      paths:
+      - backend:
+          service:
+            name: goapi-service
+            port:
+              number: <%- servicePort %>
+        path: /
+        pathType: Prefix
+  tls:
+  - secretName: <%- ingressCert %>
+
+<% if (environment === "production") { %>
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: goapi
+  namespace: <%- namespace %>
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: goapi-deployment
+  minReplicas: <%- replicas %>
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+<% } %>

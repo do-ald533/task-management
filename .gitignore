@@ -1,0 +1,18 @@
+# macOS
+**/.DS_Store
+goapi
+
+# Dev build
+build/
+tmp/
+
+
+# Swagger local
+swagger/
+
+# Test
+*.out
+
+# Environment variables
+.env
+.localstack/

@@ -1,0 +1,43 @@
+<%
+  const environment = process.env.GITHUB_EVENT_NAME === "release" ? "production" : "development";
+
+  const namespace = ({
+    production: "apps",
+    development: "sandbox"
+  })[environment];
+
+  const replicas = ({
+    production: 2,
+    development: 1
+  })[environment];
+
+  const containerRegistry = ({
+    production: "308243445248.dkr.ecr.us-east-1.amazonaws.com",
+    development: "130368255918.dkr.ecr.us-east-1.amazonaws.com"
+  })[environment];
+
+  const containerRepository = ({
+    production: "housi/goapi",
+    development: "housi/goapi"
+  })[environment];
+
+  const containerTag = ({
+    production: process.env.GITHUB_REF.replace("refs/tags/", ""),
+    development: `sandbox-${process.env.GITHUB_RUN_NUMBER}`
+  })[environment];
+
+  const servicePort = ({
+    production: 80,
+    development: 80
+  })[environment];
+
+  const ingressHost = ({
+    production: "goapi.onhousi.com",
+    development: "goapi-sandbox.housi-dev.com"
+  })[environment];
+
+  const ingressCert = ({
+    production: "cert-onhousi-com",
+    development: "cert-housi-dev-com"
+  })[environment];
+%>

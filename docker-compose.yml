@@ -1,0 +1,19 @@
+version: "3"
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    environment:
+      - SERVICES=sns,sqs
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack/data
+      - HOSTNAME_EXTERNAL=localstack
+      - AWS_REGION=us-east-1
+      - DEFAULT_REGION=us-east-1
+    network_mode: "host"
+    volumes:
+      - "./.localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  mongo:
+    image: mongo
+    network_mode: "host"
